@@ -79,7 +79,8 @@ def generate_launch_description():
         package='vesc_ackermann',
         executable='vesc_to_odom_node',
         name='vesc_to_odom_node',
-        parameters=[LaunchConfiguration('vesc_config')]
+        parameters=[LaunchConfiguration('vesc_config')],
+        remappings=[('odom', '/vesc_odom')]
     )
     vesc_driver_node = Node(
         package='vesc_driver',
@@ -106,7 +107,6 @@ def generate_launch_description():
     ld.add_action(ackermann_to_vesc_node)
     ld.add_action(vesc_to_odom_node)
     ld.add_action(vesc_driver_node)
-    # ld.add_action(throttle_interpolator_node)
     ld.add_action(urg_node)
     ld.add_action(static_tf_node)
 
