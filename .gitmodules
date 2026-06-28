@@ -1,6 +1,6 @@
 [submodule "vesc"]
 	path = vesc
-	url = https://github.com/f1tenth/vesc.git
+	url = https://github.com/RTIS-Lab/vesc.git
 	branch = humble
 [submodule "ackermann_mux"]
 	path = ackermann_mux
