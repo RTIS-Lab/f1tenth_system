@@ -125,6 +125,24 @@ ekf_filter_node:
         #odom0_pose_rejection_threshold: 5.0
         #odom0_twist_rejection_threshold: 1.0
 
+# --- lidar odometry: used as the absolute pose correction source ---
+# The rtis_lidar_odom node already consumes /vesc_odom as a motion prior
+# internally, so here we only fuse its pose (x, y, yaw) and let /vesc_odom
+# feed velocities via odom0 above. Order: x, y, z, roll, pitch, yaw,
+# vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az.
+        odom1: /lidar_odom
+        odom1_config: [true,  true,   false,
+                       false, false, true,
+                       false, false, false,
+                       false, false, false,
+                       false, false, false]
+        odom1_queue_size: 2
+        odom1_nodelay: false
+        # lidar_odom reports absolute pose in the odom frame, so do NOT use
+        # differential or relative mode (those are for sources that drift).
+        odom1_differential: false
+        odom1_relative: false
+
 
         imu0: /sensors/imu/raw
 # values is x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az. Note that not some message types
