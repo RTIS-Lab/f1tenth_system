@@ -1,19 +1,18 @@
 # ODOM EKF (vesc_odom + imu)
-# world_frame: odom. publish_tf is FALSE: this EKF emits /odometry/filtered,
-# which is fed to rtis_lidar_odom as a motion prior. The lidar odom node is
-# the system-of-record for odom -> base_link: it does scan-matching with the
-# /odometry/filtered deltas as the motion model and publishes odom -> base_link
-# tf (its `pub_tf:=true` mode), so its pose, the /lidar_odom topic, and tf all
-# line up on the map. There is no map -> odom transform in this setup -- the
-# lidar_odom's odom origin IS the global frame (the robot's start pose on the
-# map). See fusion_map.yaml (archived) for the previous 2-EKF design.
+# world_frame: odom. The publish_tf setting in this file is for the default
+# (localization_mode:=lidar_odom) flow: when false, the EKF emits only
+# /odometry/filtered, which rtis_lidar_odom consumes as a motion prior and
+# then owns odom -> base_link itself. fusion.launch.py overrides publish_tf
+# to true when launched with localization_mode:=amcl, so this EKF owns
+# odom -> base_link directly and AMCL publishes map -> odom as the global
+# correction. See fusion.launch.py header + notes.txt for the full picture.
 ekf_filter_node:
     ros__parameters:
-        frequency: 30.0
+        frequency: 60.0
         sensor_timeout: 0.1
         two_d_mode: true
         transform_time_offset: 0.0
-        transform_timeout: 0.0
+        transform_timeout: 0.01
         print_diagnostics: true
         debug: false
         # debug_out_file: /path/to/debug/file.txt
@@ -26,36 +25,26 @@ ekf_filter_node:
         base_link_frame: base_link
         world_frame: odom
 
-        # Wheel odometry: fuse x pose + vx/vy/vyaw velocities.
-        # (RL docs suggest velocity-only for wheel odometry, but this is the
-        # known-good imu+wheels behaviour; the MAP EKF corrects drift via
-        # map->odom.)
         odom0: /vesc_odom
-        odom0_config: [true,  false, false,
-                       false, false, false,
-                       true,  true,  false,
-                       false, false, true,
-                       false, false, false]
-        odom0_queue_size: 2
+        odom0_config: [false, false, false, # X,   Y,   Z
+                        false, false, false, # Roll, Pitch, Yaw
+                        true,  true,  false, # dX,  dY,  dZ  (Fuse forward speed and clamp lateral speed)
+                        false, false, true, # dRoll, dPitch, dYaw
+                        false, false, false] # ddX, ddY, ddZ
+
+        odom0_queue_size: 5
         odom0_nodelay: false
         odom0_differential: false
         odom0_relative: true
         # odom0_pose_rejection_threshold: 5.0
         # odom0_twist_rejection_threshold: 1.0
 
-        # IMU: fuse only vyaw + ax/ay/az. Orientation (roll/pitch/yaw pose) is
-        # not fused -- yaw pose comes from the lidar via the MAP EKF, and
-        # roll/pitch are discarded by two_d_mode anyway. Both angular_velocity
-        # and linear_acceleration are REP-103 compliant thanks to the unit
-        # fixes in vesc_packet.cpp (gyr deg/s -> rad/s via * pi/180; acc
-        # g-units -> m/s^2 via * 9.80665). The IMU orientation quaternion is
-        # filled directly from the firmware's q0..q3, so it is unaffected.
         imu0: /sensors/imu/raw
-        imu0_config: [false, false, false,
-                      false, false, false,
-                      false, false, false,
-                      false, false, true,
-                      true,  true,  true]
+        imu0_config: [false, false, false, # X,   Y,   Z
+                      false,  false,  true,  # Roll, Pitch, Yaw (Fusing Roll/Pitch handles gravity vectors)
+                      false, false, false, # dX,  dY,  dZ
+                      false,  false,  true,  # dRoll, dPitch, dYaw (Angular velocity)
+                      true,  false, false] # ddX, ddY, ddZ (Forward acceleration)
         imu0_nodelay: false
         imu0_differential: false
         imu0_relative: true
@@ -102,6 +91,7 @@ ekf_filter_node:
                                    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.01, 0.0,    0.0,
                                    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.01, 0.0,
                                    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.015]
+        dynamic_process_noise_covariance: true
 
         initial_estimate_covariance: [1e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    0.0,
                                       0.0,    1e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    0.0,

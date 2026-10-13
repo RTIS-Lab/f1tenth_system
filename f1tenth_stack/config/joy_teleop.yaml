@@ -2,5 +2,5 @@ joy:
   ros__parameters:
     device: "/dev/input/js0"
     deadzone: 0.01
-    autorepeat_rate: 20.0
+    autorepeat_rate: 1.0
     coalesce_interval: 0.01
