@@ -1,8 +1,8 @@
 """Nav2 navigation stack for the F1TENTH car.
 
-Starts the navigation servers only. Localization (map_server + amcl + odom
-EKF) is owned by fusion.launch.py localization_mode:=amcl, and sensors and
-drivers by bringup_launch.py:
+Starts the navigation servers only. Localization is owned by
+fusion.launch.py (localization_mode:=amcl or localization_mode:=slam_toolbox),
+and sensors and drivers by bringup_launch.py:
 
     controller_server    RegulatedPurePursuit (Ackermann path tracking)
     smoother_server      (standby; smoothing happens inside SmacPlannerHybrid)

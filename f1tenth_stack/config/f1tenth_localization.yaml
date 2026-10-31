@@ -1,0 +1,104 @@
+# slam_toolbox in localization mode ("elastic pose-graph localization").
+#
+# Loaded by fusion.launch.py when localization_mode:=slam_toolbox. In that mode
+# the ODOM EKF owns odom -> base_link (publish_tf overridden to true by the
+# launch file), and slam_toolbox owns map -> odom and publishes a latched /map
+# for RViz and Nav2's static layer. Resulting tf chain:
+#
+#   map -> odom -> base_link -> vesc -> vesc_imu
+#
+# Unlike AMCL, this mode does NOT consume a .pgm/.yaml grid map. It loads a
+# serialized pose graph: <map_file_name>.posegraph + <map_file_name>.data.
+# Create those while mapping (mapping.launch.py) with:
+#
+#   ros2 service call /slam_toolbox/serialize_map \
+#       slam_toolbox/srv/SerializePoseGraph "{filename: /abs/path/to/my_track}"
+#
+# The "save_map" service's .pgm/.yaml output is not sufficient here.
+#
+# fusion.launch.py injects map_file_name and map_start_pose at runtime. The
+# commented values below are fallbacks for running the node directly.
+slam_toolbox:
+  ros__parameters:
+    # Plugin params
+    solver_plugin: solver_plugins::CeresSolver
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+    ceres_loss_function: none
+
+    # ROS Parameters
+    odom_frame: odom
+    map_frame: map
+    # Match f1tenth_online_async.yaml: the pose graph was built with the laser
+    # frame as slam_toolbox's base, so localization must use the same frame or
+    # the loaded poses will not line up.
+    base_frame: laser
+    odom_matching: interpolate
+    seam_window: 0.05
+    debug_gap_window: 1000
+    scan_topic: /scan
+    # Informational only: fusion.launch.py selects the executable
+    # (localization_slam_toolbox_node), which is what actually puts slam_toolbox
+    # in localization mode.
+    mode: localization
+
+    # Set by fusion.launch.py from posegraph:=<basename>, or from map:=<path>.yaml
+    # with its extension stripped. Note that each map has ONE basename: this
+    # is the name passed to serialize_map, which need not match the .yaml
+    # basename (this workspace's files use <name>.s_t.posegraph, so pass
+    # posegraph:=/ros_ws/<name>.s_t). No .posegraph/.data suffix here.
+    #map_file_name: /abs/path/to/my_track
+    # Starting pose in the map frame: [x, y, theta]. Defaults to the map
+    # origin (where mapping usually started); set the actual pose if the car
+    # starts elsewhere. Overridden by the map_start_pose launch arg.
+    map_start_pose: [0.0, 0.0, 0.0]
+
+    debug_logging: false
+    throttle_scans: 1
+    transform_publish_period: 0.02 #if 0 never publishes odometry
+    map_update_interval: 5.0
+    resolution: 0.05
+    max_laser_range: 20.0 #for rastering images
+    minimum_time_interval: 0.5
+    transform_timeout: 1.0
+    tf_buffer_duration: 30.
+    stack_size_to_use: 40000000 #// program needs a larger stack size to serialize large maps
+
+    # General Parameters
+    use_scan_matching: true
+    use_scan_barycenter: true
+    minimum_travel_distance: 0.5
+    minimum_travel_heading: 0.5
+    scan_buffer_size: 10
+    scan_buffer_maximum_scan_distance: 10.0
+    link_match_minimum_response_fine: 0.1
+    link_scan_maximum_distance: 1.5
+    loop_search_maximum_distance: 3.0
+    do_loop_closing: true
+    loop_match_minimum_chain_size: 10
+    loop_match_maximum_variance_coarse: 3.0
+    loop_match_minimum_response_coarse: 0.35
+    loop_match_minimum_response_fine: 0.45
+
+    # Correlation Parameters - Correlation Parameters
+    correlation_search_space_dimension: 0.5
+    correlation_search_space_resolution: 0.01
+    correlation_search_space_smear_deviation: 0.1
+
+    # Correlation Parameters - Loop Closure Parameters
+    loop_search_space_dimension: 8.0
+    loop_search_space_resolution: 0.05
+    loop_search_space_smear_deviation: 0.03
+
+    # Scan Matcher Parameters
+    distance_variance_penalty: 0.5
+    angle_variance_penalty: 1.0
+
+    fine_search_angle_offset: 0.00349
+    coarse_search_angle_offset: 0.349
+    coarse_angle_resolution: 0.0349
+    minimum_angle_penalty: 0.9
+    minimum_distance_penalty: 0.5
+    use_response_expansion: true

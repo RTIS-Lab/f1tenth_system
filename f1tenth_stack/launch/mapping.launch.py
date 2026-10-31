@@ -20,12 +20,26 @@ What this file starts:
 tf chain while mapping: map -> odom -> base_link -> laser
                                              -> vesc -> vesc_imu
 
-When the lap is done, stop the launch file and serialize the map:
+When the lap is done, save what each localization mode consumes.
+
+For AMCL (grid map):
   ros2 service call /slam_toolbox/save_map \\
       slam_toolbox/srv/SaveMap "{name: {data: <basename>}}"
 Two files are written to your CWD: <basename>.pgm and <basename>.yaml. Those
 are what you later pass to fusion.launch.py localization_mode:=amcl
 map:=/abs/path/to/<basename>.yaml for known-map localization.
+
+For slam_toolbox localization (pose graph):
+  ros2 service call /slam_toolbox/serialize_map \\
+      slam_toolbox/srv/SerializePoseGraph "{filename: /abs/path/to/<basename>}"
+Two files are written: <basename>.posegraph and <basename>.data. Those are
+what fusion.launch.py localization_mode:=slam_toolbox loads; the .pgm/.yaml
+from save_map cannot be used by that mode. Pass posegraph:=/abs/path/to/
+<basename> (the name given to serialize_map). If the pose graph uses the same
+basename as the grid map, you may instead reuse
+map:=/abs/path/to/<basename>.yaml -- the launch file strips the extension and
+slam_toolbox appends .posegraph/.data. Prefer an absolute filename so the
+files land where you expect, not in the launch CWD.
 
 Why slam_toolbox benefits from the EKF here:
   slam_toolbox is a pose-graph SLAM system. Its inputs are odom -> base

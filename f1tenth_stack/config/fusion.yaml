@@ -3,9 +3,10 @@
 # (localization_mode:=lidar_odom) flow: when false, the EKF emits only
 # /odometry/filtered, which rtis_lidar_odom consumes as a motion prior and
 # then owns odom -> base_link itself. fusion.launch.py overrides publish_tf
-# to true when launched with localization_mode:=amcl, so this EKF owns
-# odom -> base_link directly and AMCL publishes map -> odom as the global
-# correction. See fusion.launch.py header + notes.txt for the full picture.
+# to true when launched with localization_mode:=amcl or
+# localization_mode:=slam_toolbox, so this EKF owns odom -> base_link
+# directly and the localizer publishes map -> odom as the global correction.
+# See fusion.launch.py header + notes.txt for the full picture.
 ekf_filter_node:
     ros__parameters:
         frequency: 60.0
@@ -29,7 +30,8 @@ ekf_filter_node:
         odom0_config: [false, false, false, # X,   Y,   Z
                         false, false, false, # Roll, Pitch, Yaw
                         true,  true,  false, # dX,  dY,  dZ  (Fuse forward speed and clamp lateral speed)
-                        false, false, true, # dRoll, dPitch, dYaw
+                        false, false, true, # dRoll, dPitch, dYaw (echoed command; covariance is
+                                             # published by vesc_to_odom and grows while the servo slews)
                         false, false, false] # ddX, ddY, ddZ
 
         odom0_queue_size: 5

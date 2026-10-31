@@ -16,9 +16,10 @@
   <depend>std_msgs</depend>
   <depend>robot_localization</depend>
   <!-- Optional: known-map localization via fusion.launch.py localization_mode:=amcl
-       (nav2_amcl + nav2_map_server), or map building via mapping.launch.py (slam_toolbox).
-       The default lidar-odom flow does not need these. Already a dep of kw_f110_drive,
-       listed here for completeness. -->
+       (nav2_amcl + nav2_map_server) or localization_mode:=slam_toolbox
+       (slam_toolbox pose-graph localization), or map building via
+       mapping.launch.py (slam_toolbox). The default lidar-odom flow does not
+       need these. Already a dep of kw_f110_drive, listed here for completeness. -->
   <exec_depend>nav2_amcl</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>nav2_lifecycle_manager</exec_depend>

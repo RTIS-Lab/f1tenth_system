@@ -12,7 +12,8 @@
 #
 # The alternative flow (localization_mode:=lidar_odom, the default) instead
 # runs rtis_lidar_odom, which produces a drift-bounded odom -> base_link and
-# has no map frame. amcl.yaml is not loaded in that mode.
+# has no map frame. amcl.yaml is not loaded in that mode, nor in
+# localization_mode:=slam_toolbox (that mode uses f1tenth_localization.yaml).
 amcl:
     ros__parameters:
         # Frames aligned with fusion.yaml / rtis_lidar_odom defaults.
@@ -80,7 +81,7 @@ amcl:
         save_pose_rate: 0.5
 
         # tf broadcasting. With this enabled, AMCL publishes map -> odom.
-        # The lidar odom node continues to own odom -> base_link.
+        # The ODOM EKF owns odom -> base_link in this mode.
         tf_broadcast: true
         always_restart_initialization: false
 

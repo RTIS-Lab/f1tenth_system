@@ -1,9 +1,11 @@
 # Nav2 navigation stack for the F1TENTH car (ROS 2 Humble).
 #
 # Used by navigation.launch.py. This file configures ONLY the navigation
-# servers. Localization (map_server + amcl + odom EKF) is owned by
-# fusion.launch.py localization_mode:=amcl, and the drive path (teleop twist
-# bridge -> safety stack -> vesc) lives in the drive container.
+# servers. Localization is owned by fusion.launch.py (localization_mode:=amcl
+# with nav2_map_server + nav2_amcl, or localization_mode:=slam_toolbox with
+# slam_toolbox's pose-graph localization); both publish a latched /map and
+# map -> odom, so the static layer below works with either. The drive path
+# (teleop twist bridge -> safety stack -> vesc) lives in the drive container.
 #
 # Topology:
 #   bt_navigator      /navigate_to_pose action; subscribes /goal_pose, which
@@ -198,8 +200,9 @@ global_costmap:
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        # Matches the latched QoS of the map_server started by
-        # fusion.launch.py localization_mode:=amcl.
+        # Matches the latched QoS of the map publisher started by
+        # fusion.launch.py (nav2_map_server in amcl mode, slam_toolbox in
+        # slam_toolbox mode).
         map_subscribe_transient_local: True
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
